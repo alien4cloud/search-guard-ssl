@@ -28,6 +28,10 @@ import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.http.NoHttpResponseException;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -294,6 +298,66 @@ public class SSLTest extends AbstractUnitTest {
         } catch (UnsupportedOperationException e) {
             //expected
         }
+    }
+    
+    @Test
+    public void memoryLeakCheck() throws Exception {
+        
+        enableHTTPClientSSL = true;
+        trustHTTPServerCertificate = true;
+        sendHTTPClientCertificate = true;
+
+        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
+                .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.transport.enforce_hostname_verification", false)
+                .put("searchguard.ssl.transport.resolve_hostname", false)
+                
+                .put("searchguard.ssl.http.enabled", true).put("searchguard.ssl.http.clientauth_mode", "REQUIRE")
+                .put("searchguard.ssl.http.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
+                .put("searchguard.ssl.http.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
+                
+                .build();
+
+        startES(settings);
+
+        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("node.client", true).put("path.home", ".")
+                .put(settings)// -----
+                .build();
+        
+        System.out.println("Startet");
+
+        try (Node node = new PluginAwareNode(tcSettings, SearchGuardSSLPlugin.class).start()) {
+            Thread.sleep(3000);
+            Assert.assertEquals(4, node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
+            
+           
+            final int count = 1000000;
+            
+            for(int i=0; i<count; i++) {
+                IndexResponse ir = node.client().index(new IndexRequest("test").type("test").source("{\"a\":5}").refresh(true)).actionGet();
+                Assert.assertEquals(4, node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
+                Assert.assertNotNull(ir.getId());
+            }
+            
+            System.out.println("Query");
+            
+            for(int i=0; i<count; i++) {
+                SearchResponse sr = node.client().search(new SearchRequest()).actionGet();
+                Assert.assertEquals(4, node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
+                Assert.assertEquals(count,sr.getHits().getTotalHits());
+                Assert.assertTrue(executeSimpleRequest("_search").contains(":"+count));
+            }
+            
+        }
+        
+        System.gc();
+        System.out.println("Fin.");
+        
+        Thread.sleep(500000);
     }
     
 }

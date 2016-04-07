@@ -112,4 +112,10 @@ public class OpenSSLTest extends SSLTest {
         System.out.println("OpenSSL secure ciphers: " + openSSLSecureCiphers);
         Assert.assertTrue(openSSLSecureCiphers.size() > 0);
     }
+    
+    @Test
+    public void memoryLeakCheck() throws Exception {
+        Assume.assumeTrue(OpenSsl.isAvailable());
+        super.memoryLeakCheck();
+    }
 }

@@ -193,12 +193,12 @@ public abstract class AbstractUnitTest {
     }
 
     protected void waitForGreenClusterState(final Client client) throws IOException {
-        waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30), client);
+        waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(300), client);
     }
 
     protected void waitForCluster(final ClusterHealthStatus status, final TimeValue timeout, final Client client) throws IOException {
         try {
-            log.debug("waiting for cluster state {}", status.name());
+           /* log.debug("waiting for cluster state {}", status.name());
             final ClusterHealthResponse healthResponse = client.admin().cluster().prepareHealth().setWaitForStatus(status)
                     .setTimeout(timeout).setWaitForNodes("3").execute().actionGet();
             if (healthResponse.isTimedOut()) {
@@ -207,7 +207,7 @@ public abstract class AbstractUnitTest {
             } else {
                 log.debug("... cluster state ok " + healthResponse.getStatus().name() + " with " + healthResponse.getNumberOfNodes()
                         + " nodes");
-            }
+            }*/
 
             final NodesInfoResponse res = esNode1.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet();
 
