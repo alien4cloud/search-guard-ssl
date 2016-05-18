@@ -17,17 +17,14 @@
 
 package org.elasticsearch.node;
 
-import java.util.Arrays;
-
-import org.elasticsearch.Version;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.node.internal.InternalSettingsPreparer;
+import org.elasticsearch.node.internal.InternalNode;
 import org.elasticsearch.plugins.Plugin;
 
-public class PluginAwareNode extends Node {
+public class PluginAwareNodeFactory {
 
-    @SafeVarargs
-    public PluginAwareNode(final Settings preparedSettings, final Class<? extends Plugin>... plugins) {
-        super(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null), Version.CURRENT, Arrays.asList(plugins));
+    public static Node createNode(final Settings preparedSettings, final Class<? extends Plugin> plugin) {
+        return new InternalNode(ImmutableSettings.builder().put(preparedSettings).put("plugin.types", plugin.getName()).build(), false);
     }
 }

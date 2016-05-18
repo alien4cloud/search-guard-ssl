@@ -18,14 +18,30 @@
 package com.floragunn.searchguard.ssl;
 
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.SettingsFilter;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 public class SearchGuardSSLSettingsFilter {
+
+    private static final Pattern FILTER_PATTERN = Pattern.compile("searchguard.ssl.*");
 
     @Inject
     public SearchGuardSSLSettingsFilter(final SettingsFilter settingsFilter) {
         super();
-        settingsFilter.addFilter("searchguard.ssl.*");
+        settingsFilter.addFilter(new SettingsFilter.Filter() {
+            @Override
+            public void filter(ImmutableSettings.Builder settings) {
+                Iterator<Map.Entry<String, String>> iterator = settings.internalMap().entrySet().iterator();
+                while (iterator.hasNext()) {
+                    if (FILTER_PATTERN.matcher(iterator.next().getKey()).matches()) {
+                        iterator.remove();
+                    }
+                }
+            }
+        });
     }
-
 }

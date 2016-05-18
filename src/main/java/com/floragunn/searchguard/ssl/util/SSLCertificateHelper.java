@@ -18,16 +18,14 @@
 package com.floragunn.searchguard.ssl.util;
 
 import java.security.*;
-import java.security.KeyStore.ProtectionParameter;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 
-import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.base.Strings;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 

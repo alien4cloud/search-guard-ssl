@@ -25,19 +25,14 @@ import javax.net.ssl.SSLException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.netty.channel.*;
+import org.elasticsearch.common.netty.handler.ssl.SslHandler;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.netty.NettyTransport;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
-import org.jboss.netty.handler.ssl.SslHandler;
 
 import com.floragunn.searchguard.ssl.SearchGuardKeyStore;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
@@ -48,9 +43,9 @@ public class SearchGuardSSLNettyTransport extends NettyTransport {
 
     @Inject
     public SearchGuardSSLNettyTransport(final Settings settings, final ThreadPool threadPool, final NetworkService networkService,
-            final BigArrays bigArrays, final Version version, final NamedWriteableRegistry namedWriteableRegistry,
+            final BigArrays bigArrays, final Version version,
             final SearchGuardKeyStore sgks) {
-        super(settings, threadPool, networkService, bigArrays, version, namedWriteableRegistry);
+        super(settings, threadPool, networkService, bigArrays, version);
         this.sgks = sgks;
     }
 
