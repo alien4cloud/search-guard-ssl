@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch;
+package com.floragunn.searchguard.ssl;
 
 import java.security.BasicPermission;
 
