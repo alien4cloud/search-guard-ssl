@@ -43,7 +43,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.PluginAwareNodeFactory;
+import org.elasticsearch.node.internal.InternalNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -155,12 +155,9 @@ public abstract class AbstractUnitTest {
 
         FileUtils.deleteDirectory(new File("data"));
 
-        esNode1 = PluginAwareNodeFactory.createNode(getDefaultSettingsBuilder(1, false, true).put(
-                settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
-        esNode2 = PluginAwareNodeFactory.createNode(getDefaultSettingsBuilder(2, true, true).put(
-                settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
-        esNode3 = PluginAwareNodeFactory.createNode(getDefaultSettingsBuilder(3, true, false).put(
-                settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
+        esNode1 = new InternalNode(getDefaultSettingsBuilder(1, false, true).put(settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), true);
+        esNode2 = new InternalNode(getDefaultSettingsBuilder(2, false, true).put(settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), true);
+        esNode3 = new InternalNode(getDefaultSettingsBuilder(3, false, true).put(settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), true);
 
         esNode1.start();
         esNode2.start();

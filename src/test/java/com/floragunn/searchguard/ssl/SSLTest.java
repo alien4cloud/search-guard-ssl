@@ -29,7 +29,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.PluginAwareNodeFactory;
+import org.elasticsearch.node.internal.InternalNode;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -236,7 +236,6 @@ public class SSLTest extends AbstractUnitTest {
         final Settings tcSettings = ImmutableSettings.builder()
                 .put("cluster.name", clustername)
                 .put("path.home", ".")
-                .put("plugin.types", SearchGuardSSLPlugin.class.getName())
                 .put(settings).build();
         try (TransportClient tc = new TransportClient(tcSettings)) {
             tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
@@ -262,7 +261,7 @@ public class SSLTest extends AbstractUnitTest {
                 .put(settings)// -----
                 .build();
 
-        try (Node node = PluginAwareNodeFactory.createNode(tcSettings, SearchGuardSSLPlugin.class).start()) {
+        try (Node node = new InternalNode(tcSettings, true).start()) {
             ClusterHealthResponse res = node.client().admin().cluster().health(new ClusterHealthRequest().waitForNodes("4").timeout(TimeValue.timeValueSeconds(5))).actionGet();
             Assert.assertFalse(res.isTimedOut());
             Assert.assertEquals(4, res.getNumberOfNodes());
@@ -290,8 +289,7 @@ public class SSLTest extends AbstractUnitTest {
                 .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
                 .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore_fail.jks"))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
-                .put("searchguard.ssl.transport.resolve_hostname", false)
-                .put("plugin.types", SearchGuardSSLPlugin.class.getName()).build();
+                .put("searchguard.ssl.transport.resolve_hostname", false).build();
 
         try (TransportClient tc = new TransportClient(tcSettings)) {
             tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
