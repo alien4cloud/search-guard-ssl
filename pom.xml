@@ -26,14 +26,14 @@
     <inceptionYear>2015</inceptionYear>
 
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh-fg</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
         <repository>
-            <id>ossrh-fg</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>repo.opensource.fastconnect.org</id>
+            <url>https://fastconnect.org/maven/content/repositories/opensource</url>
         </repository>
+        <snapshotRepository>
+            <id>repo.opensource.snapshot.fastconnect.org</id>
+            <url>https://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <licenses>
