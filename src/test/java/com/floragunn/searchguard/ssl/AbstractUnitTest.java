@@ -18,18 +18,6 @@
 package com.floragunn.searchguard.ssl;
 
 import io.netty.handler.ssl.OpenSsl;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-
-import javax.net.ssl.SSLContext;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -43,24 +31,35 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.PluginAwareNode;
+import org.elasticsearch.node.internal.InternalNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+
+import javax.net.ssl.SSLContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
 
 public abstract class AbstractUnitTest {
 
@@ -71,8 +70,8 @@ public abstract class AbstractUnitTest {
         System.out.println("Java Version: " + System.getProperty("java.version") + " " + System.getProperty("java.vendor"));
         System.out.println("JVM Impl.: " + System.getProperty("java.vm.version") + " " + System.getProperty("java.vm.vendor") + " "
                 + System.getProperty("java.vm.name"));
-        System.out.println("Open SSL available: "+OpenSsl.isAvailable());
-        System.out.println("Open SSL version: "+OpenSsl.versionString());
+        System.out.println("Open SSL available: " + OpenSsl.isAvailable());
+        System.out.println("Open SSL version: " + OpenSsl.versionString());
     }
 
     @Rule
@@ -121,9 +120,9 @@ public abstract class AbstractUnitTest {
     }
 
     // @formatter:off
-    private Settings.Builder getDefaultSettingsBuilder(final int nodenum, final boolean dataNode, final boolean masterNode) {
+    private ImmutableSettings.Builder getDefaultSettingsBuilder(final int nodenum, final boolean dataNode, final boolean masterNode) {
 
-        return Settings.settingsBuilder()
+        return ImmutableSettings.settingsBuilder()
                 .put("node.name", "searchguard_testnode_" + nodenum)
                 .put("node.data", dataNode)
                 .put("node.master", masterNode)
@@ -136,11 +135,11 @@ public abstract class AbstractUnitTest {
                 .put("index.number_of_shards", "1")
                 .put("index.number_of_replicas", "0")
                 .put("http.enabled", !dataNode)
-                .put("cluster.routing.allocation.disk.watermark.high","1mb")
-                .put("cluster.routing.allocation.disk.watermark.low","1mb")
+                .put("cluster.routing.allocation.disk.watermark.high", "1mb")
+                .put("cluster.routing.allocation.disk.watermark.low", "1mb")
                 .put("http.cors.enabled", true)
                 .put("node.local", false)
-                .put("path.home",".");
+                .put("path.home", ".");
     }
     // @formatter:on
 
@@ -156,12 +155,9 @@ public abstract class AbstractUnitTest {
 
         FileUtils.deleteDirectory(new File("data"));
 
-        esNode1 = new PluginAwareNode(getDefaultSettingsBuilder(1, false, true).put(
-                settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
-        esNode2 = new PluginAwareNode(getDefaultSettingsBuilder(2, true, true).put(
-                settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
-        esNode3 = new PluginAwareNode(getDefaultSettingsBuilder(3, true, false).put(
-                settings == null ? Settings.Builder.EMPTY_SETTINGS : settings).build(), SearchGuardSSLPlugin.class);
+        esNode1 = new InternalNode(getDefaultSettingsBuilder(1, false, true).put(settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), true);
+        esNode2 = new InternalNode(getDefaultSettingsBuilder(2, false, true).put(settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), true);
+        esNode3 = new InternalNode(getDefaultSettingsBuilder(3, false, true).put(settings == null ? ImmutableSettings.Builder.EMPTY_SETTINGS : settings).build(), true);
 
         esNode1.start();
         esNode2.start();
@@ -217,13 +213,13 @@ public abstract class AbstractUnitTest {
                 final NodeInfo nodeInfo = nodes[i];
                 if (nodeInfo.getHttp() != null && nodeInfo.getHttp().address() != null) {
                     final InetSocketTransportAddress is = (InetSocketTransportAddress) nodeInfo.getHttp().address().publishAddress();
-                    httpPort = is.getPort();
-                    httpHost = is.getHost();
+                    httpPort = is.address().getPort();
+                    httpHost = is.address().getHostString();
                 }
 
                 final InetSocketTransportAddress is = (InetSocketTransportAddress) nodeInfo.getTransport().getAddress().publishAddress();
-                nodePort = is.getPort();
-                nodeHost = is.getHost();
+                nodePort = is.address().getPort();
+                nodeHost = is.address().getHostString();
             }
         } catch (final ElasticsearchTimeoutException e) {
             throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
@@ -306,9 +302,9 @@ public abstract class AbstractUnitTest {
             String[] protocols = null;
 
             if (enableHTTPClientSSLv3Only) {
-                protocols = new String[] { "SSLv3" };
+                protocols = new String[]{"SSLv3"};
             } else {
-                protocols = new String[] { "TLSv1", "TLSv1.1", "TLSv1.2" };
+                protocols = new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"};
             }
 
             final SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, protocols, null,

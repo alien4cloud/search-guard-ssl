@@ -17,32 +17,31 @@
 
 package com.floragunn.searchguard.ssl;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLHandshakeException;
-
+import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import org.apache.http.NoHttpResponseException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.PluginAwareNode;
+import org.elasticsearch.node.internal.InternalNode;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLHandshakeException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class SSLTest extends AbstractUnitTest {
 
@@ -58,7 +57,7 @@ public class SSLTest extends AbstractUnitTest {
         trustHTTPServerCertificate = true;
         sendHTTPClientCertificate = true;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_ALIAS, "node-0").put("searchguard.ssl.http.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
@@ -75,7 +74,7 @@ public class SSLTest extends AbstractUnitTest {
         Assert.assertTrue(executeSimpleRequest("_searchguard/sslinfo?pretty").contains("CN=node-0.example.com,OU=SSL,O=Test,L=Test,C=DE"));
 
     }
-    
+
     @Test
     public void testHttpsOptionalAuth() throws Exception {
 
@@ -83,7 +82,7 @@ public class SSLTest extends AbstractUnitTest {
         trustHTTPServerCertificate = true;
         sendHTTPClientCertificate = true;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_ALIAS, "node-0").put("searchguard.ssl.http.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
@@ -106,7 +105,7 @@ public class SSLTest extends AbstractUnitTest {
         trustHTTPServerCertificate = true;
         sendHTTPClientCertificate = true;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
@@ -137,7 +136,7 @@ public class SSLTest extends AbstractUnitTest {
         trustHTTPServerCertificate = true;
         sendHTTPClientCertificate = false;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_ALIAS, "node-0").put("searchguard.ssl.http.enabled", true)
@@ -158,7 +157,7 @@ public class SSLTest extends AbstractUnitTest {
         trustHTTPServerCertificate = true;
         sendHTTPClientCertificate = false;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_ALIAS, "node-0").put("searchguard.ssl.http.enabled", true)
@@ -171,7 +170,7 @@ public class SSLTest extends AbstractUnitTest {
         Assert.assertTrue(executeSimpleRequest("_nodes/settings?pretty").contains(clustername));
         Assert.assertFalse(executeSimpleRequest("_searchguard/sslinfo?pretty").contains("CN=node-0.example.com,OU=SSL,O=Test,L=Test,C=DE"));
     }
-    
+
     @Test
     public void testHttpsEnforceFail() throws Exception {
 
@@ -179,7 +178,7 @@ public class SSLTest extends AbstractUnitTest {
         trustHTTPServerCertificate = true;
         sendHTTPClientCertificate = false;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_ALIAS, "node-0").put("searchguard.ssl.http.enabled", true)
@@ -205,7 +204,7 @@ public class SSLTest extends AbstractUnitTest {
         sendHTTPClientCertificate = false;
         enableHTTPClientSSLv3Only = true;
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", false)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_ALIAS, "node-0").put("searchguard.ssl.http.enabled", true)
@@ -222,20 +221,23 @@ public class SSLTest extends AbstractUnitTest {
     @Test
     public void testTransportClientSSL() throws Exception {
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
                 .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
                 .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore.jks"))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
-                .put("searchguard.ssl.transport.resolve_hostname", false).build();
+                .put("searchguard.ssl.transport.resolve_hostname", false)
+                .build();
 
         startES(settings);
 
-        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("path.home", ".").put(settings).build();
-
-        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+        final Settings tcSettings = ImmutableSettings.builder()
+                .put("cluster.name", clustername)
+                .put("path.home", ".")
+                .put(settings).build();
+        try (TransportClient tc = new TransportClient(tcSettings)) {
             tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
             Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
         }
@@ -244,7 +246,7 @@ public class SSLTest extends AbstractUnitTest {
     @Test
     public void testNodeClientSSL() throws Exception {
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
@@ -255,11 +257,11 @@ public class SSLTest extends AbstractUnitTest {
 
         startES(settings);
 
-        final Settings tcSettings = Settings.builder().put("cluster.name", clustername).put("node.client", true).put("path.home", ".")
+        final Settings tcSettings = ImmutableSettings.builder().put("cluster.name", clustername).put("node.client", true).put("path.home", ".")
                 .put(settings)// -----
                 .build();
 
-        try (Node node = new PluginAwareNode(tcSettings, SearchGuardSSLPlugin.class).start()) {
+        try (Node node = new InternalNode(tcSettings, true).start()) {
             ClusterHealthResponse res = node.client().admin().cluster().health(new ClusterHealthRequest().waitForNodes("4").timeout(TimeValue.timeValueSeconds(5))).actionGet();
             Assert.assertFalse(res.isTimedOut());
             Assert.assertEquals(4, res.getNumberOfNodes());
@@ -271,7 +273,7 @@ public class SSLTest extends AbstractUnitTest {
     public void testTransportClientSSLFail() throws Exception {
         thrown.expect(NoNodeAvailableException.class);
 
-        final Settings settings = Settings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
+        final Settings settings = ImmutableSettings.settingsBuilder().put("searchguard.ssl.transport.enabled", true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, "node-0")
@@ -282,14 +284,14 @@ public class SSLTest extends AbstractUnitTest {
 
         startES(settings);
 
-        final Settings tcSettings = Settings.builder().put("cluster.name", clustername)
+        final Settings tcSettings = ImmutableSettings.builder().put("cluster.name", clustername)
                 .put("path.home", getAbsoluteFilePathFromClassPath("node-0-keystore.jks").getParent())
                 .put("searchguard.ssl.transport.keystore_filepath", getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
                 .put("searchguard.ssl.transport.truststore_filepath", getAbsoluteFilePathFromClassPath("truststore_fail.jks"))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
                 .put("searchguard.ssl.transport.resolve_hostname", false).build();
 
-        try (TransportClient tc = TransportClient.builder().settings(tcSettings).addPlugin(SearchGuardSSLPlugin.class).build()) {
+        try (TransportClient tc = new TransportClient(tcSettings)) {
             tc.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(nodeHost, nodePort)));
             Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
         }
@@ -311,12 +313,12 @@ public class SSLTest extends AbstractUnitTest {
         System.out.println("JDK enabled ciphers: " + jdkEnabledCiphers);
         Assert.assertTrue(jdkEnabledCiphers.size() > 0);
     }
-    
+
     @Test
     public void testUnmodifieableCipherProtocolConfig() throws Exception {
         SSLConfigConstants.getSecureSSLProtocols()[0] = "bogus";
         Assert.assertEquals("TLSv1.2", SSLConfigConstants.getSecureSSLProtocols()[0]);
-        
+
         try {
             SSLConfigConstants.SECURE_SSL_CIPHERS.set(0, "bogus");
             Assert.fail();
@@ -324,5 +326,5 @@ public class SSLTest extends AbstractUnitTest {
             //expected
         }
     }
-    
+
 }

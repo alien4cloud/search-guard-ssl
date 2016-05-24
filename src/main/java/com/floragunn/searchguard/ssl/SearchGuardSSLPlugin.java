@@ -24,15 +24,13 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 
-import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.env.Environment;
-import org.elasticsearch.env.EnvironmentModule;
 import org.elasticsearch.http.HttpServerModule;
-import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
 import org.elasticsearch.transport.TransportModule;
 
@@ -41,9 +39,8 @@ import com.floragunn.searchguard.ssl.rest.SearchGuardSSLInfoAction;
 import com.floragunn.searchguard.ssl.transport.SearchGuardSSLNettyTransport;
 import com.floragunn.searchguard.ssl.transport.SearchGuardSSLTransportService;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
-import com.google.common.collect.ImmutableList;
 
-public final class SearchGuardSSLPlugin extends Plugin {
+public final class SearchGuardSSLPlugin extends AbstractPlugin {
 
     private final ESLogger log = Loggers.getLogger(this.getClass());
     static final String CLIENT_TYPE = "client.type";
@@ -85,36 +82,27 @@ public final class SearchGuardSSLPlugin extends Plugin {
 
     }
 
-    public void onModule(final RestModule module) {
-        if (!client) {
-            module.addRestAction(SearchGuardSSLInfoAction.class);
+    @Override
+    public void processModule(Module module) {
+        if (!client && module instanceof RestModule) {
+            ((RestModule) module).addRestAction(SearchGuardSSLInfoAction.class);
         }
-    }
-
-    public void onModule(final HttpServerModule module) {
-        if (!client && httpSSLEnabled) {
-            module.setHttpServerTransport(SearchGuardSSLNettyHttpServerTransport.class, name());
+        if (!client && httpSSLEnabled && module instanceof HttpServerModule) {
+            ((HttpServerModule) module).setHttpServerTransport(SearchGuardSSLNettyHttpServerTransport.class, name());
         }
-    }
-
-    public void onModule(final TransportModule module) {
-        if (transportSSLEnabled) {
-            module.setTransport(SearchGuardSSLNettyTransport.class, name());
+        if (transportSSLEnabled&& module instanceof TransportModule) {
+            TransportModule transportModule = (TransportModule) module;
+            transportModule.setTransport(SearchGuardSSLNettyTransport.class, name());
 
             if (!client && !searchGuardPluginAvailable()) {
-                module.setTransportService(SearchGuardSSLTransportService.class, name());
+                transportModule.setTransportService(SearchGuardSSLTransportService.class, name());
             }
         }
     }
 
     @Override
-    public Collection<Module> nodeModules() {
-        if (!client) {
-            return ImmutableList.<Module> of(new SearchGuardSSLModule(settings));
-
-        } else {
-            return ImmutableList.<Module> of(new SearchGuardSSLModule(settings), new EnvironmentModule(new Environment(settings)));
-        }
+    public Collection<Module> modules(Settings settings) {
+        return ImmutableList.<Module> of(new SearchGuardSSLModule(this.settings));
     }
 
     @Override

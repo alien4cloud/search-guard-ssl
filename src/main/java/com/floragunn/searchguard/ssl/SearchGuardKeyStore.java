@@ -55,7 +55,7 @@ import javax.net.ssl.SSLParameters;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.common.base.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -64,7 +64,6 @@ import org.elasticsearch.env.Environment;
 
 import com.floragunn.searchguard.ssl.util.SSLCertificateHelper;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
-import com.google.common.base.Strings;
 
 public class SearchGuardKeyStore {
 
@@ -148,7 +147,7 @@ public class SearchGuardKeyStore {
     private void initSSLConfig() {
         
         final Environment env = new Environment(settings);
-        log.info("Config directory is {}/, from there the key- and truststore files are resolved relatively", env.configFile().toAbsolutePath());
+        log.info("Config directory is {}/, from there the key- and truststore files are resolved relatively", env.configFile().toPath().toAbsolutePath());
 
         StringBuilder sb = new StringBuilder();
         Map<String, String> settingsAsMap = settings.getAsMap();
@@ -159,13 +158,13 @@ public class SearchGuardKeyStore {
         
         if (transportSSLEnabled) {
             
-            final String keystoreFilePath = env.configFile()
+            final String keystoreFilePath = env.configFile().toPath()
                     .resolve(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_FILEPATH, "")).toAbsolutePath().toString();
             final String keystoreType = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_TYPE, DEFAULT_STORE_TYPE);
             final String keystorePassword = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_PASSWORD, DEFAULT_STORE_PASSWORD);
             final String keystoreAlias = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS, null);
 
-            final String truststoreFilePath = env.configFile()
+            final String truststoreFilePath = env.configFile().toPath()
                     .resolve(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_TRUSTSTORE_FILEPATH, "")).toAbsolutePath()
                     .toString();
 
@@ -221,7 +220,7 @@ public class SearchGuardKeyStore {
         final boolean client = !"node".equals(this.settings.get(SearchGuardSSLPlugin.CLIENT_TYPE));
 
         if (!client && httpSSLEnabled) {
-            final String keystoreFilePath = env.configFile()
+            final String keystoreFilePath = env.configFile().toPath()
                     .resolve(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_FILEPATH, "")).toAbsolutePath().toString();
             final String keystoreType = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_TYPE, DEFAULT_STORE_TYPE);
             final String keystorePassword = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_PASSWORD, DEFAULT_STORE_PASSWORD);
@@ -240,7 +239,7 @@ public class SearchGuardKeyStore {
 
             log.info("HTTPS client auth mode {}", httpClientAuthMode);
             
-            final String truststoreFilePath = env.configFile()
+            final String truststoreFilePath = env.configFile().toPath()
                     .resolve(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_TRUSTSTORE_FILEPATH, "")).toAbsolutePath().toString();
 
             if(settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_KEYSTORE_FILEPATH, null) == null) {
